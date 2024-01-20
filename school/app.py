@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, flash, redirect
 import sqlite3
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'
 
 DB_FILE = "school.db"
 
@@ -34,6 +35,7 @@ def create_database():
 # Function to execute SQL queries
 def execute_query(query, parameters=None):
     with sqlite3.connect(DB_FILE, timeout=10) as conn:
+        conn.execute('PRAGMA busy_timeout = 30000')  # Set busy timeout to 30 seconds
         cursor = conn.cursor()
         if parameters:
             if isinstance(parameters[0], tuple):  # Check if it's a list of tuples
@@ -43,7 +45,6 @@ def execute_query(query, parameters=None):
         else:
             cursor.execute(query)
         conn.commit()
-
 
 # Function to fetch data from the database
 def fetch_data(query, parameters=None):
@@ -72,7 +73,7 @@ def add_student():
     nickname = request.form['nickname']
     age = request.form['age']
     grade = request.form['grade']
-    registration_date = request.form['registration_date']
+    registration_date = request.form.get('registration_date')
 
     # Insert data into the database
     execute_query('INSERT INTO students VALUES (?, ?, ?, ?, ?, ?)',
@@ -90,10 +91,18 @@ def add_student():
 def delete_student():
     if request.method == 'POST':
         student_number = request.form['student_number']
+        # Check if the student exists
+        existing_student = fetch_data('SELECT * FROM students WHERE student_number = ?', (student_number,))
+        if not existing_student:
+            flash("Student not found.", 'error')
+            return redirect('/')
+
         # Perform the deletion operation in the database
-        execute_query('DELETE FROM students WHERE student_number = ?', (student_number,))
         execute_query('DELETE FROM lessons WHERE student_number = ?', (student_number,))
-        return render_template('index.html', message="Student deleted successfully.")
+        execute_query('DELETE FROM students WHERE student_number = ?', (student_number,))
+        
+        flash("Student deleted successfully.", 'success')
+        return redirect('/')
     else:
         return render_template('delete_student.html')
 
@@ -105,7 +114,7 @@ def update_student():
         nickname = request.form['nickname']
         age = request.form['age']
         grade = request.form['grade']
-        registration_date = request.form['registration_date']
+        registration_date = request.form.get('registration_date')
 
         # Update the student information in the database
         execute_query('''
@@ -142,8 +151,11 @@ def view_student():
             return render_template('index.html', view_student_error="Student not found.")
     else:
         return render_template('index.html')
+        if not student_info:
+            return render_template('index.html', view_student_error="Student not found.")
 
 if __name__ == '__main__':
     create_database()
     app.run(debug=True)
+
 
