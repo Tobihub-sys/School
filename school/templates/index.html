@@ -29,6 +29,27 @@
         list-style-type: none;
         padding: 0;
       }
+      /* Add this CSS to your <style> section */
+      ul.flash-messages {
+        padding: 10px;
+        list-style-type: none;
+      }
+
+      ul.flash-messages li {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+      ul.flash-messages li.success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+
+      ul.flash-messages li.error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
     </style>
     <script>
       function moveToNextInput(currentInput, event) {
@@ -46,6 +67,13 @@
   </head>
   <body>
     <h1>Student Management System</h1>
+    {% with messages = get_flashed_messages() %} {% if messages %}
+<ul class="flash-messages">
+  {% for message in messages %}
+    <li>{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %} {% endwith %}
 
     <!-- Add Student Form -->
     <form action="/add_student" method="post">
@@ -129,13 +157,28 @@
       <input type="text" name="nickname" required /><br />
 
       <label for="age">Age:</label>
-      <input type="number" name="age" required /><br />
+      <input
+        type="number"
+        name="age"
+        required
+        onkeydown="moveToNextInput(this, event)"
+      /><br />
 
       <label for="grade">Grade:</label>
-      <input type="number" name="grade" required /><br />
+      <input
+        type="number"
+        name="grade"
+        required
+        onkeydown="moveToNextInput(this, event)"
+      /><br />
 
       <label for="registration_date">Registration Date:</label>
-      <input type="text" name="registration_date" required /><br />
+      <input
+        type="date"
+        name="registration_date"
+        required
+        onkeydown="moveToNextInput(this, event)"
+      /><br />
 
       <label for="lessons">Lessons:</label>
       <input type="text" name="lessons" /><br />
@@ -145,40 +188,36 @@
 
     <!-- View Student Form -->
     <!-- View Student Form -->
-<form action="/view_student" method="post">
-    <h2>View Student</h2>
-    <label for="student_number">Student Number:</label>
-    <input type="text" name="student_number" required><br>
-    <button type="submit">View Student</button>
-</form>
+    <form action="/view_student" method="post">
+      <h2>View Student</h2>
+      <label for="student_number">Student Number:</label>
+      <input type="text" name="student_number" required /><br />
+      <button type="submit">View Student</button>
+    </form>
 
-<!-- View Student Information -->
-{% if view_student_info %}
+    <!-- View Student Information -->
+    {% if view_student_info %}
     <h2>Student Information:</h2>
     <ul>
-        <li>Student Number: {{ view_student_info[0] }}</li>
-        <li>Name: {{ view_student_info[1] }}</li>
-        <li>Nickname: {{ view_student_info[2] }}</li>
-        <li>Age: {{ view_student_info[3] }}</li>
-        <li>Grade: {{ view_student_info[4] }}</li>
-        <li>Registration Date: {{ view_student_info[5] }}</li>
+      <li>Student Number: {{ view_student_info[0] }}</li>
+      <li>Name: {{ view_student_info[1] }}</li>
+      <li>Nickname: {{ view_student_info[2] }}</li>
+      <li>Age: {{ view_student_info[3] }}</li>
+      <li>Grade: {{ view_student_info[4] }}</li>
+      <li>Registration Date: {{ view_student_info[5] }}</li>
     </ul>
 
     {% if view_lessons %}
-        <h2>Lessons:</h2>
-        <ul>
-            {% for lesson in view_lessons %}
-                <li>{{ lesson[0] }}</li>
-            {% endfor %}
-        </ul>
+    <h2>Lessons:</h2>
+    <ul>
+      {% for lesson in view_lessons %}
+      <li>{{ lesson[0] }}</li>
+      {% endfor %}
+    </ul>
     {% else %}
-        <p>No lessons found for this student.</p>
-    {% endif %}
-{% else %}
-    {% if view_student_error %}
-        <p>{{ view_student_error }}</p>
-    {% endif %}
-{% endif %}
-
+    <p>No lessons found for this student.</p>
+    {% endif %} {% else %} {% if view_student_error %}
+    <p>{{ view_student_error }}</p>
+    {% endif %} {% endif %}
   </body>
 </html>
