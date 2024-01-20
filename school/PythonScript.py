@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 DB_FILE = "school.db"
 
@@ -27,23 +28,49 @@ def create_database():
 
         conn.commit()
 
+def get_int_input(prompt):
+    while True:
+        try:
+            return int(input(prompt))
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
+def get_validated_input(prompt, is_text=True, is_date=False):
+    while True:
+        user_input = input(prompt)
+        if is_text and not user_input.isdigit():
+            return user_input
+        elif not is_text and user_input.isdigit():
+            return user_input
+        elif is_date:
+            try:
+                # Attempt to convert the input to a datetime object
+                datetime.strptime(user_input, "%Y-%m-%d")
+                return user_input
+            except ValueError:
+                print("Invalid date format. Please enter a valid date (YYYY-MM-DD).")
+        elif not is_text and not user_input:
+            # Allow empty input for non-text fields (e.g., Enter to finish entering lesson name)
+            return user_input
+        print("Invalid input. Please enter a valid value.")
+
 def add_student():
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
 
-        student_number = int(input("Enter student number: "))
-        name = input("Enter name: ")
-        nickname = input("Enter nickname: ")
-        age = int(input("Enter age: "))
-        grade = int(input("Enter grade: "))
-        registration_date = input("Enter registration date: ")
+        student_number = get_int_input("Enter student number: ")
+        name = get_validated_input("Enter name: ")
+        nickname = get_validated_input("Enter nickname: ")
+        age = get_int_input("Enter age: ")
+        grade = get_int_input("Enter grade: ")
+        registration_date = get_validated_input("Enter registration date (YYYY-MM-DD): ", is_date=True)
 
         cursor.execute('''
             INSERT INTO students VALUES (?, ?, ?, ?, ?, ?)
         ''', (student_number, name, nickname, age, grade, registration_date))
 
         while True:
-            lesson_name = input("Enter lesson name (Press Enter to finish): ")
+            lesson_name = get_validated_input("Enter lesson name (Press Enter to finish): ", False)
             if not lesson_name:
                 break
             cursor.execute('''
@@ -58,6 +85,14 @@ def delete_student():
         cursor = conn.cursor()
 
         student_number = int(input("Enter student number to delete: "))
+
+        # Check if the student exists
+        cursor.execute('SELECT 1 FROM students WHERE student_number = ?', (student_number,))
+        existing_student = cursor.fetchone()
+
+        if existing_student is None:
+            print("Student not found.")
+            return
 
         try:
             conn.execute('BEGIN TRANSACTION')
@@ -173,16 +208,16 @@ while True:
 
     if choice.lower() == 'a':
         add_student()
+    # Add similar modifications for other operations
     elif choice.lower() == 'd':
         delete_student()
     elif choice.lower() == 'u':
-       update_student()
+        update_student()
     elif choice.lower() == 's':
         view_student()
     elif choice.lower() == 'x':
         break
     else:
         print("Invalid choice. Please try again.")
-
 
         
